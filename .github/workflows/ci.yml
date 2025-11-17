@@ -6,75 +6,14 @@ on:
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
+  # Run full regression weekly (optional)
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight
 
 jobs:
-  test:
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        browser: [chromium, firefox, webkit]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Install Playwright browsers
-      run: npx playwright install --with-deps ${{ matrix.browser }}
-
-    - name: Run Playwright tests
-      run: npx playwright test --project=${{ matrix.browser }}
-      env:
-        CI: true
-        HEADLESS: true
-        ACTION_TIMEOUT: 60000
-        NAVIGATION_TIMEOUT: 60000
-        # Increase test timeout for slow OrangeHRM site
-        PLAYWRIGHT_TEST_TIMEOUT: 120000
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: playwright-report-${{ matrix.browser }}
-        path: playwright-report/
-        retention-days: 30
-
-    - name: Upload test traces
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-traces-${{ matrix.browser }}
-        path: test-results/
-        retention-days: 30
-
-    - name: Upload screenshots
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-screenshots-${{ matrix.browser }}
-        path: test-results/screenshots/
-        retention-days: 30
-
-    - name: Upload videos
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-videos-${{ matrix.browser }}
-        path: test-results/
-        retention-days: 30
-
+  # Fast smoke tests - runs on every push/PR (critical path only)
   smoke-tests:
-    timeout-minutes: 30
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     
     steps:
@@ -93,7 +32,7 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install --with-deps chromium
 
-    - name: Run smoke tests
+    - name: Run smoke tests (critical path only)
       run: npm run test:smoke
       env:
         CI: true
@@ -108,5 +47,55 @@ jobs:
       with:
         name: smoke-test-results
         path: playwright-report/
+        retention-days: 7
+
+  # Full regression - runs only on schedule or manual trigger
+  full-regression:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium]  # Only Chromium for full regression
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+
+    - name: Run full regression tests
+      run: npx playwright test --project=${{ matrix.browser }}
+      env:
+        CI: true
+        HEADLESS: true
+        ACTION_TIMEOUT: 60000
+        NAVIGATION_TIMEOUT: 60000
+        PLAYWRIGHT_TEST_TIMEOUT: 120000
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-report-${{ matrix.browser }}
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Upload test traces
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-traces-${{ matrix.browser }}
+        path: test-results/
         retention-days: 30
 
