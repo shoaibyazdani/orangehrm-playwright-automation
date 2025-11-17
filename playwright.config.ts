@@ -17,7 +17,10 @@ const config: PlaywrightTestConfig = defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // Reduce workers in CI to avoid overwhelming slow OrangeHRM site
+  workers: process.env.CI ? 1 : undefined,
+  // Increase test timeout for slow site (2 minutes per test)
+  timeout: parseInt(process.env.PLAYWRIGHT_TEST_TIMEOUT || '120000'),
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['list'],
@@ -30,9 +33,9 @@ const config: PlaywrightTestConfig = defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    // Timeouts: Can be increased for slow internet (default 30s, can go up to 60s)
-    actionTimeout: parseInt(process.env.ACTION_TIMEOUT || '30000'),
-    navigationTimeout: parseInt(process.env.NAVIGATION_TIMEOUT || '30000'),
+    // Timeouts: Increased for slow OrangeHRM site (60s for actions/navigation)
+    actionTimeout: parseInt(process.env.ACTION_TIMEOUT || (process.env.CI ? '60000' : '30000')),
+    navigationTimeout: parseInt(process.env.NAVIGATION_TIMEOUT || (process.env.CI ? '60000' : '30000')),
     headless: process.env.HEADLESS !== 'false',
   },
 

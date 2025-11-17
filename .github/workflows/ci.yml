@@ -36,6 +36,10 @@ jobs:
       env:
         CI: true
         HEADLESS: true
+        ACTION_TIMEOUT: 60000
+        NAVIGATION_TIMEOUT: 60000
+        # Increase test timeout for slow OrangeHRM site
+        PLAYWRIGHT_TEST_TIMEOUT: 120000
 
     - name: Upload test results
       if: always()
@@ -94,6 +98,9 @@ jobs:
       env:
         CI: true
         HEADLESS: true
+        ACTION_TIMEOUT: 60000
+        NAVIGATION_TIMEOUT: 60000
+        PLAYWRIGHT_TEST_TIMEOUT: 120000
 
     - name: Upload smoke test results
       if: always()
