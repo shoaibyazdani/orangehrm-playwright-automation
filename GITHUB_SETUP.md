@@ -63,7 +63,9 @@ You'll need to authenticate when pushing. Choose one method:
 7. When pushing, use the token as your password:
    ```bash
    # Username: your-github-username
-   # Password: paste-your-token-here
+   # Password: paste-your-token-
+   
+   starting the actions
    ```
 
 #### Option B: GitHub CLI (Easier)
