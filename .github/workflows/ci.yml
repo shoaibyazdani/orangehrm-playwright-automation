@@ -7,8 +7,7 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
   # Run full regression weekly (optional)
-  schedule:
-    - cron: '0 0 * * 0'  # Every Sunday at midnight
+    # Every Sunday at midnight
 
 jobs:
   # Fast smoke tests - runs on every push/PR (critical path only)
